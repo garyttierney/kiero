@@ -34,6 +34,10 @@
 # include "minhook/include/MinHook.h"
 #endif
 
+#if KIERO_USE_DETOURS
+# include <detours/detours.h>
+#endif
+
 #ifdef _UNICODE
 # define KIERO_TEXT(text) L##text
 #else
@@ -692,7 +696,17 @@ kiero::Status::Enum kiero::bind(uint16_t _index, void** _original, void* _functi
 		}
 #endif
 
-		return Status::Success;
+
+#if KIERO_USE_DETOURS
+		DetourTransactionBegin();
+		void* target = (void*)g_methodsTable[_index];
+		*_original = target;
+
+		DetourAttach(_original, _function);
+		DetourTransactionCommit();
+#endif
+
+            return Status::Success;
 	}
 
 	return Status::NotInitializedError;
